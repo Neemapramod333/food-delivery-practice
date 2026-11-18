@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tiffin Trail | Order food online</title>
+<style>
+  :root { --bg:#fff8f1; --card:#ffffff; --ink:#2b1d14; --muted:#7a6a5d; --line:#f0e2d3;
+          --brand:#c2410c; --brand-dark:#9a3412; --veg:#1a7f37; --nonveg:#b42318; --ok:#e8f5ec; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  header { background:var(--brand); color:#fff; padding:28px 16px 32px; }
+  .top { max-width:1080px; margin:0 auto; }
+  .logo { font-size:1.9rem; font-weight:800; letter-spacing:-.02em; margin:0; }
+  .tag { margin:4px 0 14px; opacity:.9; }
+  .chips-row { display:flex; gap:8px; flex-wrap:wrap; }
+  .pill { background:rgba(255,255,255,.18); border-radius:99px; padding:4px 12px; font-size:.85rem; }
+  main { max-width:1080px; margin:0 auto; padding:20px 16px 48px; display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:24px; align-items:start; }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .filters button { font:inherit; font-size:.9rem; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:99px; padding:6px 14px; cursor:pointer; }
+  .filters button.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .menu { display:flex; flex-direction:column; gap:12px; }
+  .dish { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; display:flex; gap:14px; align-items:center; }
+  .dish .info { flex:1; min-width:0; }
+  .dish h3 { margin:0; font-size:1.05rem; display:flex; align-items:center; gap:8px; }
+  .dish p { margin:4px 0 6px; color:var(--muted); font-size:.9rem; }
+  .price { font-weight:700; }
+  .mark { width:15px; height:15px; border:2px solid; border-radius:3px; display:inline-flex; align-items:center; justify-content:center; flex:none; }
+  .mark::after { content:""; width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .mark.veg { color:var(--veg); } .mark.nonveg { color:var(--nonveg); }
+  .add, .step button { font:inherit; font-weight:700; cursor:pointer; border-radius:10px; }
+  .add { border:1px solid var(--brand); color:var(--brand); background:#fff; padding:7px 22px; }
+  .add:hover { background:#fff1e8; }
+  .step { display:flex; align-items:center; border:1px solid var(--brand); border-radius:10px; overflow:hidden; }
+  .step button { border:0; background:var(--brand); color:#fff; width:34px; height:36px; border-radius:0; }
+  .step span { min-width:34px; text-align:center; font-weight:700; }
+  aside { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; position:sticky; top:16px; }
+  aside h2 { margin:0 0 12px; font-size:1.15rem; }
+  .line { display:flex; justify-content:space-between; gap:10px; font-size:.95rem; padding:3px 0; }
+  .line.total { font-weight:800; font-size:1.05rem; border-top:1px dashed var(--line); margin-top:8px; padding-top:10px; }
+  .empty { color:var(--muted); font-size:.95rem; }
+  .hint { background:#fff1e8; color:var(--brand-dark); border-radius:10px; padding:8px 10px; font-size:.88rem; margin:12px 0 0; }
+  .hint.good { background:var(--ok); color:var(--veg); }
+  .order { width:100%; margin-top:14px; font:inherit; font-weight:700; border:0; border-radius:12px; padding:12px; background:var(--brand); color:#fff; cursor:pointer; }
+  .order:disabled { background:#d9cfc6; cursor:not-allowed; }
+  .done { background:var(--ok); border-radius:12px; padding:14px; margin-top:14px; }
+  .done b { color:var(--veg); }
+  footer { text-align:center; color:var(--muted); font-size:.8rem; padding:0 16px 32px; }
+  button:focus-visible { outline:3px solid #f59e0b; outline-offset:2px; }
+  @media (max-width:800px) { main { grid-template-columns:1fr; } aside { position:static; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <h1 class="logo" id="name">Tiffin Trail</h1>
+    <p class="tag">Home-style meals, delivered hot in about 35 minutes</p>
+    <div class="chips-row">
+      <span class="pill" id="free-pill"></span>
+      <span class="pill" id="min-pill"></span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section>
+    <div class="filters" id="filters"></div>
+    <div class="menu" id="menu"></div>
+  </section>
+  <aside>
+    <h2>Your order</h2>
+    <div id="cart"></div>
+  </aside>
+</main>
+
+<footer>Practice project, not a real restaurant. Version {{VERSION}}, built {{BUILT_AT}}.</footer>
+
+<script>
+const MENU = {{MENU_JSON}};
+const cart = {};
+let filter = "All";
+
+const rupees = n => "₹" + n.toLocaleString("en-IN");
+const byId = id => MENU.items.find(i => i.id === id);
+
+document.getElementById("name").textContent = MENU.restaurant;
+document.getElementById("free-pill").textContent = "Free delivery above " + rupees(MENU.free_delivery_above);
+document.getElementById("min-pill").textContent = "Minimum order " + rupees(MENU.min_order);
+
+function drawFilters() {
+  const cats = ["All", ...new Set(MENU.items.map(i => i.category))];
+  const box = document.getElementById("filters");
+  box.innerHTML = "";
+  cats.forEach(c => {
+    const b = document.createElement("button");
+    b.textContent = c;
+    b.className = c === filter ? "on" : "";
+    b.onclick = () => { filter = c; drawFilters(); drawMenu(); };
+    box.appendChild(b);
+  });
+}
+
+function drawMenu() {
+  const box = document.getElementById("menu");
+  box.innerHTML = "";
+  MENU.items.filter(i => filter === "All" || i.category === filter).forEach(item => {
+    const qty = cart[item.id] || 0;
+    const card = document.createElement("div");
+    card.className = "dish";
+    card.innerHTML =
+      '<div class="info"><h3><span class="mark ' + (item.veg ? "veg" : "nonveg") + '" title="' + (item.veg ? "Veg" : "Non-veg") + '"></span></h3>' +
+      '<p></p><span class="price">' + rupees(item.price) + '</span></div>';
+    card.querySelector("h3").append(item.name);
+    card.querySelector("p").textContent = item.desc;
+    if (qty === 0) {
+      const add = document.createElement("button");
+      add.className = "add"; add.textContent = "Add";
+      add.setAttribute("aria-label", "Add " + item.name);
+      add.onclick = () => change(item.id, 1);
+      card.appendChild(add);
+    } else {
+      const step = document.createElement("div");
+      step.className = "step";
+      step.innerHTML = '<button aria-label="Remove one">−</button><span>' + qty + '</span><button aria-label="Add one">+</button>';
+      step.children[0].onclick = () => change(item.id, -1);
+      step.children[2].onclick = () => change(item.id, 1);
+      card.appendChild(step);
+    }
+    box.appendChild(card);
+  });
+}
+
+function change(id, by) {
+  cart[id] = (cart[id] || 0) + by;
+  if (cart[id] <= 0) delete cart[id];
+  drawMenu(); drawCart();
+}
+
+function drawCart(message) {
+  const box = document.getElementById("cart");
+  const ids = Object.keys(cart);
+  if (ids.length === 0) {
+    box.innerHTML = message || '<p class="empty">Your cart is empty. Add a dish to get started.</p>';
+    return;
+  }
+  const subtotal = ids.reduce((sum, id) => sum + byId(id).price * cart[id], 0);
+  const delivery = subtotal >= MENU.free_delivery_above ? 0 : MENU.delivery_fee;
+  let html = "";
+  ids.forEach(id => {
+    html += '<div class="line"><span>' + cart[id] + ' × ' + byId(id).name.replace(/</g, "&lt;") + '</span><span>' + rupees(byId(id).price * cart[id]) + '</span></div>';
+  });
+  html += '<div class="line" style="margin-top:8px"><span>Item total</span><span>' + rupees(subtotal) + '</span></div>';
+  html += '<div class="line"><span>Delivery fee</span><span>' + (delivery === 0 ? "FREE" : rupees(delivery)) + '</span></div>';
+  html += '<div class="line total"><span>To pay</span><span id="to-pay">' + rupees(subtotal + delivery) + '</span></div>';
+  if (subtotal < MENU.min_order) {
+    html += '<p class="hint">Add ' + rupees(MENU.min_order - subtotal) + ' more to reach the minimum order.</p>';
+  } else if (delivery > 0) {
+    html += '<p class="hint">Add ' + rupees(MENU.free_delivery_above - subtotal) + ' more for free delivery.</p>';
+  } else {
+    html += '<p class="hint good">You get free delivery on this order.</p>';
+  }
+  html += '<button class="order" id="place"' + (subtotal < MENU.min_order ? " disabled" : "") + '>Place order</button>';
+  box.innerHTML = html;
+  document.getElementById("place").onclick = () => {
+    const orderNo = "TT-" + Math.floor(1000 + Math.random() * 9000);
+    const paid = rupees(subtotal + delivery);
+    Object.keys(cart).forEach(k => delete cart[k]);
+    drawMenu();
+    drawCart('<div class="done"><b>Order ' + orderNo + ' placed!</b><br>' + paid + ' to pay on delivery. Arriving in about 35 minutes.</div>');
+  };
+}
+
+drawFilters(); drawMenu(); drawCart();
+</script>
+</body>
+</html>
