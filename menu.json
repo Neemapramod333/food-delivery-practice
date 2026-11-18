@@ -1,0 +1,16 @@
+{
+  "restaurant": "Tiffin Trail",
+  "delivery_fee": 40,
+  "free_delivery_above": 499,
+  "min_order": 149,
+  "items": [
+    { "id": "FD101", "name": "Masala Dosa", "category": "South Indian", "price": 120, "veg": true, "desc": "Crisp dosa with potato masala, coconut chutney and sambar" },
+    { "id": "FD102", "name": "Idli Vada Combo", "category": "South Indian", "price": 99, "veg": true, "desc": "Two idlis and one medu vada with chutney and sambar" },
+    { "id": "FD201", "name": "Paneer Tikka", "category": "Starters", "price": 180, "veg": true, "desc": "Char-grilled paneer cubes with mint chutney" },
+    { "id": "FD202", "name": "Chicken 65", "category": "Starters", "price": 220, "veg": false, "desc": "Spicy fried chicken with curry leaves" },
+    { "id": "FD301", "name": "Veg Biryani", "category": "Mains", "price": 210, "veg": true, "desc": "Basmati rice and vegetables, served with raita" },
+    { "id": "FD302", "name": "Chicken Biryani", "category": "Mains", "price": 260, "veg": false, "desc": "Hyderabadi-style dum biryani, served with raita" },
+    { "id": "FD303", "name": "Dal Makhani with 2 Rotis", "category": "Mains", "price": 190, "veg": true, "desc": "Slow-cooked black dal with butter and cream" },
+    { "id": "FD401", "name": "Gulab Jamun (2 pcs)", "category": "Desserts", "price": 70, "veg": true, "desc": "Warm, soft and soaked in syrup" }
+  ]
+}
